@@ -4,7 +4,9 @@ A Telegram bot for managing a personal inventory, designed to integrate with Mar
 
 ## Features
 
-*   **Add Items:** Easily add new items to your inventory with a name, quantity, and photo.
+*   **Add Items:** Easily add new items to your inventory with a name, quantity, photo, description, size and status.
+*   **AI-Powered Data Enrichment:** Automatically populate item details by analyzing its image. The AI fills in the name and description, and enriches the information with a web search, considering any data you've already provided.
+*   **Quick Add:** Fill location, box and quantity in name creation (e.g. `Item name; q 2 c box-name l location`).
 *   **Organize with Boxes:** Assign items to specific boxes to keep track of their location.
 *   **Telegram Interface:** Interact with your inventory through a simple and intuitive Telegram bot interface.
 *   **Markdown Integration:** Each inventory item is saved as a separate Markdown file with YAML front matter, making it easy to integrate with your existing notes.
@@ -66,12 +68,20 @@ poetry run python main.py
 3.  **Follow the prompts to set the quantity, add a photo, and assign a box.**
 4.  **Once you're done, click "Save" to save the item to your inventory.**
 
+### Example: Using AI to Add an Item
+
+1.  **Send a photo of your item with a caption.** Include any information you have, such as the item's name, brand, or model (e.g., "Sony WH-1000XM4"). This is especially useful if the text is not visible in the image.
+2.  **The bot will analyze the image and use the provided information to search the web.** It will automatically fill in the item's name and description with the data it finds.
+3.  **Review the information and save the item.**
+
 ## Project Structure
 
 ```
 .
 ├── inventorybot/
 │   ├── entities.py       # Data structures for Item, Box, and Status
+│   ├── service.py        # Business logic for the bot
+│   ├── vision.py         # Computer vision services for image analysis
 │   └── infra/
 │       └── markdown_output.py # Handles saving items to Markdown files
 ├── main.py             # Main application entry point

@@ -34,20 +34,21 @@ A Telegram bot for managing a personal inventory, designed to integrate with Mar
 
 ### Configuration
 
-1.  **Set your Telegram Bot Token:**
+1.  **Create a `.env` file:**
 
-    Open `main.py` and replace `"your_token_here"` with your actual Telegram bot token:
+    In the root of the project, create a file named `.env`. You can copy the example file:
 
-    ```python
-    TOKEN = "your_token_here"
+    ```bash
+    cp .env.example .env
     ```
 
-2.  **Set your output directory:**
+2.  **Set your environment variables:**
 
-    In `main.py`, change the `MarkdownOutput` path to your desired output directory:
+    Open the `.env` file and add your Telegram bot token and the desired output directory:
 
-    ```python
-    output = MarkdownOutput("/path/to/your/inventory")
+    ```
+    TELEGRAM_TOKEN="your_token_here"
+    OUTPUT_DIR="/path/to/your/inventory"
     ```
 
 ### Running the Bot

@@ -35,8 +35,23 @@ The bot's architecture is simple and modular:
 
 ## Running the Bot
 
-1.  Set the `TOKEN` variable in `main.py` to your Telegram bot token.
-2.  Run the bot:
+1.  **Create a `.env` file:**
+
+    In the root of the project, create a file named `.env`. You can copy the example file:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+2.  **Set your environment variables:**
+
+    Open the `.env` file and add your Telegram bot token and the desired output directory:
+
+    ```
+    TELEGRAM_TOKEN="your_token_here"
+    OUTPUT_DIR="/path/to/your/inventory"
+    ```
+3.  Run the bot:
 
     ```bash
     poetry run python main.py

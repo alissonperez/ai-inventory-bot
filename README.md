@@ -1,6 +1,6 @@
 # Inventory Bot
 
-A Telegram bot for managing a personal inventory, designed to integrate with Markdown-based note-taking apps like Obsidian.
+A smart Telegram bot that revolutionizes personal inventory management. With AI-powered image analysis, it automatically identifies items, fills in details, and enriches them with web-sourced information. Designed for seamless integration with Markdown-based note-taking apps like Obsidian, this bot makes keeping track of your belongings effortless and intelligent.
 
 ## Features
 

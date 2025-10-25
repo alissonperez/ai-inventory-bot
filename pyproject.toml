@@ -1,0 +1,28 @@
+[project]
+name = "inventorybot"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "alissonperez",email = "756802+alissonperez@users.noreply.github.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "python-telegram-bot (>=22.5,<23.0)",
+    "colorlog (>=6.10.1,<7.0.0)",
+    "pyyaml (>=6.0.3,<7.0.0)",
+    "python-slugify (>=8.0.4,<9.0.0)",
+    "openai (>=2.6.0,<3.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)"
+]
+
+[dependency-groups]
+dev = [
+    "icecream (>=2.1.8,<3.0.0)",
+    "pytest (>=8.4.2,<9.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

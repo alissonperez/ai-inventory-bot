@@ -71,23 +71,20 @@ def ensure_item(context: ContextTypes.DEFAULT_TYPE) -> Item:
 def build_keyboard(item: Item) -> InlineKeyboardMarkup:
     keyboard = [
         [
-            InlineKeyboardButton("🖊 Alterar nome", callback_data="edit_nome"),
+            InlineKeyboardButton("🖊 Editar nome", callback_data="edit_nome"),
             InlineKeyboardButton(
-                "📝 Alterar descrição", callback_data="edit_description"
+                "📝 Editar descrição", callback_data="edit_description"
             ),
         ],
+        [InlineKeyboardButton("🔢 Editar quantidade", callback_data="edit_quantidade")],
+        [InlineKeyboardButton("📏 Editar tamanho", callback_data="edit_size")],
+        [InlineKeyboardButton("🖼 Editar foto", callback_data="edit_foto")],
         [
+            InlineKeyboardButton("📦 Editar caixa", callback_data="edit_box"),
             InlineKeyboardButton(
-                "🔢 Alterar quantidade", callback_data="edit_quantidade"
-            )
-        ],
-        [InlineKeyboardButton("📏 Alterar tamanho", callback_data="edit_size")],
-        [InlineKeyboardButton("🖼 Alterar foto", callback_data="edit_foto")],
-        [
-            InlineKeyboardButton("📦 Alterar caixa", callback_data="edit_box"),
-            InlineKeyboardButton(
-                "📦 Alterar localização", callback_data="edit_location"
+                "📦 Editar localização", callback_data="edit_location"
             ),
+            InlineKeyboardButton("❌ Remover", callback_data="remove_location_and_box"),
         ],
         [
             InlineKeyboardButton("💾 Gravar", callback_data="save_item"),
@@ -318,6 +315,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_edit_message(query, "Envie a foto:")
     elif data == "extract_vision_data":
         await extract_vision_data(query, context)
+    elif data == "remove_location_and_box":
+        item.location = None
+        item.box = None
+        await safe_edit_message(query, "Local e caixa removidos.")
+        await show_summary(query, context)
     elif data == "save_item":
         _, success = await save(item, query)
         if success:

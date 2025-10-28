@@ -28,6 +28,7 @@ from telegram.ext import (
     filters,
 )
 
+from inventorybot.settings import settings
 from inventorybot.entities import Item, Status, Box
 from inventorybot.infra.markdown_output import MarkdownOutput
 from inventorybot.vision import VisionService
@@ -41,8 +42,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-TOKEN = os.getenv("TELEGRAM_TOKEN")
-OUTPUT_DIR = os.getenv("OUTPUT_DIR")
+TOKEN = settings.telegram_token
+OUTPUT_DIR = settings.output_dir
 
 re_multiple_spaces = re.compile(r"\s+")
 

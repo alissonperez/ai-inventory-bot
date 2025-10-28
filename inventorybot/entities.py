@@ -17,21 +17,21 @@ class Status(Enum):
 
 
 @dataclass
-class Box:
+class Location:
     name: str
-    location: Optional[str] = None
+    location: Optional["Location"] = None
 
     def filename(self):
-        return f"Caixa {slugify(self.name)} - Inventário"
+        return f"{slugify(self.name)} - Inventário"
 
     def __str__(self):
-        return f"Caixa {self.name}"
+        return self.name
 
     def to_dict(self):
         return {
             "name": self.name,
             "filename": self.filename(),
-            "location": self.location or "",
+            "location": self.location.to_dict() if self.location else "",
         }
 
 
@@ -49,8 +49,7 @@ class Item:
     borrowed_by: Optional[str] = None
     borrowed_date: Optional[str] = None
 
-    box: Optional[Box] = None
-    location: Optional[str] = None
+    location: Optional[Location] = None
 
     def validate(self):
         if self.name is None:
@@ -59,8 +58,8 @@ class Item:
         if self.quantity is None:
             raise ValueError("Quantity is required")
 
-        if self.box is None and self.location is None:
-            raise ValueError("Box or location is required")
+        if self.location is None:
+            raise ValueError("Location is required")
 
     def to_dict(self):
         return {
@@ -72,8 +71,7 @@ class Item:
             "photo": self.photo or "",
             "borrowed_by": self.borrowed_by,
             "borrowed_date": self.borrowed_date,
-            "box": self.box.to_dict() if self.box else None,
-            "location": self.location,
+            "location": self.location.to_dict() if self.location else None,
         }
 
     def cover_filename(self):
@@ -96,4 +94,4 @@ class Item:
         return f"{self.name} ({self.quantity})"
 
     def __repr__(self):
-        return f"Item(name={self.name}, quantity={self.quantity}, size={self.size}, status={self.status}, photo={self.photo}, borrowed_by={self.borrowed_by}, borrowed_date={self.borrowed_date}, box={self.box}, location={self.location})"
+        return f"Item(name={self.name}, quantity={self.quantity}, size={self.size}, status={self.status}, photo={self.photo}, borrowed_by={self.borrowed_by}, borrowed_date={self.borrowed_date}, location={self.location})"

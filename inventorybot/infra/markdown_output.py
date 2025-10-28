@@ -7,7 +7,7 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 
-from inventorybot.entities import Item, Box
+from inventorybot.entities import Item, Location
 
 
 def _dump_properties(properties):
@@ -43,7 +43,7 @@ class MarkdownOutput:
         with open(full_path, "w") as file:
             file.write(content)
 
-        self._ensure_box(item.box)
+        self._ensure_location(item.location)
 
         return item
 
@@ -57,10 +57,8 @@ class MarkdownOutput:
             properties["cover"] = f"[[{item.cover_filename()}]]"
             del properties["photo"]
 
-        if item.box:
-            properties["box"] = f"[[{item.box.filename()}]]"
         if item.location:
-            properties["location"] = f"[[{item.location}]]"
+            properties["location"] = f"[[{item.location.filename()}]]"
 
         content = _dump_properties(properties)
         content.append(f"# {item.name}")
@@ -98,27 +96,27 @@ class MarkdownOutput:
 
         return cover_filepath
 
-    def _ensure_box(self, box: Box):
-        if not box:
+    def _ensure_location(self, location: Location):
+        if not location:
             return
 
-        filename = box.filename()
-        box_filename = f"{filename}.md"
-        box_dir = os.path.join(self.filepath, "Caixas")
-        os.makedirs(box_dir, exist_ok=True)
+        filename = location.filename()
+        location_filename = f"{filename}.md"
+        location_dir = os.path.join(self.filepath, "Locais")
+        os.makedirs(location_dir, exist_ok=True)
 
-        box_filepath = os.path.join(box_dir, box_filename)
+        location_filepath = os.path.join(location_dir, location_filename)
 
         # if file exists, do nothing
-        if os.path.exists(box_filepath):
+        if os.path.exists(location_filepath):
             return
 
-        properties = box.to_dict()
+        properties = location.to_dict()
         if "filename" in properties:
             del properties["filename"]
 
         content = _dump_properties(properties)
-        content.append(f"# {box.name}")
+        content.append(f"# {location.name}")
 
-        with open(box_filepath, "w") as file:
+        with open(location_filepath, "w") as file:
             file.write("\n".join(content))

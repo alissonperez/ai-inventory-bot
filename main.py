@@ -29,7 +29,7 @@ from telegram.ext import (
 )
 
 from inventorybot.settings import settings
-from inventorybot.entities import Item, Status, Box
+from inventorybot.entities import Item, Status, Location
 from inventorybot.infra.markdown_output import MarkdownOutput
 from inventorybot.vision import VisionService
 
@@ -55,7 +55,9 @@ vision_service = VisionService()
 # Helpers
 # =========================
 def reset_context(context: ContextTypes.DEFAULT_TYPE) -> None:
-    context.user_data["item"] = Item(quantity=1, box=context.user_data.get("last_box"))
+    context.user_data["item"] = Item(
+        quantity=1, location=context.user_data.get("last_location")
+    )
     if "action" in context.user_data:
         del context.user_data["action"]
 
@@ -81,16 +83,15 @@ def build_keyboard(item: Item) -> InlineKeyboardMarkup:
         [InlineKeyboardButton("📏 Editar tamanho", callback_data="edit_size")],
         [InlineKeyboardButton("🖼 Editar foto", callback_data="edit_foto")],
         [
-            InlineKeyboardButton("📦 Editar caixa", callback_data="edit_box"),
             InlineKeyboardButton(
                 "📦 Editar localização", callback_data="edit_location"
             ),
-            InlineKeyboardButton("❌ Remover", callback_data="remove_location_and_box"),
+            InlineKeyboardButton("❌ Remover", callback_data="remove_location"),
         ],
         [
             InlineKeyboardButton("💾 Gravar", callback_data="save_item"),
             InlineKeyboardButton(
-                "💾 Gravar (nova caixa)", callback_data="save_item_new_box"
+                "💾 Gravar (em novo local)", callback_data="save_item_new_location"
             ),
         ],
         [InlineKeyboardButton("❌ Descartar", callback_data="discard_item")],
@@ -117,7 +118,6 @@ def render_summary(item: Item) -> str:
         f"📝 Descrição: {description_txt}\n"
         f"📊 Quantidade: {item.quantity}\n"
         f"📏 Tamanho: {item.size}\n"
-        f"📦 Caixa: {item.box}\n"
         f"📦 Localização: {item.location}\n"
         f"🔖 Status: {status_txt}"
     )
@@ -182,15 +182,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_summary(update, context)
         return
 
-    # Se não tem caixa, define e pede nome
-    if action == "edit_box":
-        item.box = Box(name=text)
-        await show_summary(update, context)
-        return
-
-    # Se não tem localização, define e pede nome
     if action == "edit_location":
-        item.location = text
+        item.location = Location(name=text)
         await show_summary(update, context)
         return
 
@@ -253,14 +246,12 @@ def handle_name(name: str, item: Item) -> Item:
         raise ValueError("Comandos inválidos na legenda")
 
     for command, value in commands:
-        if command == "c":
-            item.box = Box(name=value)
+        if command == "l":
+            item.location = Location(name=value)
         elif command == "q":
             qtd = value
             if qtd.isdigit():
                 item.quantity = int(qtd)
-        elif command == "l":
-            item.location = value
         elif command == "s":
             item.size = value
 
@@ -304,8 +295,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_edit_message(query, "Envie o nome:")
     elif data == "edit_description":
         await safe_edit_message(query, "Envie a descrição:")
-    elif data == "edit_box":
-        await safe_edit_message(query, "Informe a caixa:")
     elif data == "edit_location":
         await safe_edit_message(query, "Informe o local:")
     elif data == "edit_quantidade":
@@ -316,20 +305,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_edit_message(query, "Envie a foto:")
     elif data == "extract_vision_data":
         await extract_vision_data(query, context)
-    elif data == "remove_location_and_box":
+    elif data == "remove_location":
         item.location = None
-        item.box = None
-        await safe_edit_message(query, "Local e caixa removidos.")
+        await safe_edit_message(query, "Local removido.")
         await show_summary(query, context)
     elif data == "save_item":
         _, success = await save(item, query)
         if success:
-            context.user_data["last_box"] = item.box
+            context.user_data["last_location"] = item.location
             reset_context(context)
-    elif data == "save_item_new_box":
+    elif data == "save_item_new_location":
         _, success = await save(item, query)
         if success:
-            context.user_data["last_box"] = None
+            context.user_data["last_location"] = None
             reset_context(context)
     elif data == "discard_item":
         reset_context(context)

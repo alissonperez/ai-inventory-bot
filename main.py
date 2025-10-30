@@ -32,6 +32,7 @@ from inventorybot.settings import settings
 from inventorybot.entities import Item, Status, Location
 from inventorybot.infra.markdown_output import MarkdownOutput
 from inventorybot.vision import VisionService
+from inventorybot.parser import parser
 
 
 # =========================
@@ -241,19 +242,18 @@ def handle_name(name: str, item: Item) -> Item:
         return item
 
     name, commands_str = splited[0], splited[1]
-    commands = convert_list_to_pairs(commands_str)
-    if not commands:
-        raise ValueError("Comandos inválidos na legenda")
+    commands = parser(commands_str)
 
-    for command, value in commands:
+    for command, *value in commands:
+        value_str = " ".join(value)
         if command == "l":
-            item.location = Location(name=value)
+            item.location = Location(name=value_str)
         elif command == "q":
-            qtd = value
+            qtd = value_str
             if qtd.isdigit():
                 item.quantity = int(qtd)
         elif command == "s":
-            item.size = value
+            item.size = value_str
 
     item.name = name
     return item

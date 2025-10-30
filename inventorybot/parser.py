@@ -62,8 +62,3 @@ def _parser(tokens: list[Token]) -> list[list[str]]:
         instructions.append(current_instruction)
 
     return instructions
-
-
-if __name__ == "__main__":
-    print(tokenizer(value))
-    print(parser(tokenizer(value)))

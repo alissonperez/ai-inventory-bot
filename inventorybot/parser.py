@@ -19,7 +19,7 @@ class Token:
 # <COMMAND> = <OPERATIAON>\s<VALUE>(\s<VALUE>)*
 # <INSTRUCTIONS>=<COMMAND>(\s<COMMAND>)*
 
-OPERATIONS = set(["l", "q", "s"])
+OPERATIONS = set(["l", "q", "s", "t"])
 
 
 def _clean_str(value):

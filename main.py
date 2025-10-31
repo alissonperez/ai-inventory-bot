@@ -14,6 +14,7 @@ from typing import Optional
 from enum import Enum
 from icecream import ic
 
+from slugify import slugify
 from telegram import (
     Update,
     InlineKeyboardButton,
@@ -72,6 +73,13 @@ def ensure_item(context: ContextTypes.DEFAULT_TYPE) -> Item:
     return item
 
 
+def handle_tags(text: str) -> list[str]:
+    tags_text = re_multiple_spaces.sub(" ", text)
+    tags_striped = [v.strip() for v in tags_text.split(",")]
+    tags_with_no_space = [slugify(v) for v in tags_striped]
+    return tags_with_no_space
+
+
 def build_keyboard(item: Item) -> InlineKeyboardMarkup:
     keyboard = [
         [
@@ -82,6 +90,11 @@ def build_keyboard(item: Item) -> InlineKeyboardMarkup:
         ],
         [InlineKeyboardButton("🔢 Editar quantidade", callback_data="edit_quantidade")],
         [InlineKeyboardButton("📏 Editar tamanho", callback_data="edit_size")],
+        # edit tags
+        [
+            InlineKeyboardButton("🏷 Editar tags", callback_data="edit_tags"),
+            InlineKeyboardButton("❌ Remover", callback_data="remove_tags"),
+        ],
         [InlineKeyboardButton("🖼 Editar foto", callback_data="edit_foto")],
         [
             InlineKeyboardButton(
@@ -120,6 +133,7 @@ def render_summary(item: Item) -> str:
         f"📊 Quantidade: {item.quantity}\n"
         f"📏 Tamanho: {item.size}\n"
         f"📦 Localização: {item.location}\n"
+        f"🏷️ Tags: {', '.join(item.tags) if item.tags else '*Nenhuma*'}\n"
         f"🔖 Status: {status_txt}"
     )
 
@@ -185,6 +199,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if action == "edit_location":
         item.location = Location(name=text)
+        await show_summary(update, context)
+        return
+
+    if action == "edit_tags":
+        item.tags = handle_tags(text)
         await show_summary(update, context)
         return
 
@@ -254,6 +273,8 @@ def handle_name(name: str, item: Item) -> Item:
                 item.quantity = int(qtd)
         elif command == "s":
             item.size = value_str
+        elif command == "t":
+            item.tags = handle_tags(value_str)
 
     item.name = name
     return item
@@ -303,11 +324,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_edit_message(query, "Informe o tamanho:")
     elif data == "edit_foto":
         await safe_edit_message(query, "Envie a foto:")
+    elif data == "edit_tags":
+        await safe_edit_message(query, "Envie as tags (separadas por ','):")
     elif data == "extract_vision_data":
         await extract_vision_data(query, context)
     elif data == "remove_location":
         item.location = None
         await safe_edit_message(query, "Local removido.")
+        await show_summary(query, context)
+    elif data == "remove_tags":
+        item.tags = []
+        await safe_edit_message(query, "Tags removidas.")
         await show_summary(query, context)
     elif data == "save_item":
         _, success = await save(item, query)

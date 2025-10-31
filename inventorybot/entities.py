@@ -45,6 +45,7 @@ class Item:
     size: Optional[str] = None
     status: Status = Status.DISPONIVEL
     photo: Optional[str] = None
+    tags: Optional[list[str]] = None
 
     borrowed_by: Optional[str] = None
     borrowed_date: Optional[str] = None
@@ -69,6 +70,7 @@ class Item:
             "size": self.size or "",
             "status": self.status.value,
             "photo": self.photo or "",
+            "tags": self.tags or [],
             "borrowed_by": self.borrowed_by,
             "borrowed_date": self.borrowed_date,
             "location": self.location.to_dict() if self.location else None,

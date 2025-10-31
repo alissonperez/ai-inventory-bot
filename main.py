@@ -58,7 +58,9 @@ vision_service = VisionService()
 # =========================
 def reset_context(context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data["item"] = Item(
-        quantity=1, location=context.user_data.get("last_location")
+        quantity=1,
+        location=context.user_data.get("last_location"),
+        tags=context.user_data.get("last_tags", []),
     )
     if "action" in context.user_data:
         del context.user_data["action"]
@@ -108,7 +110,7 @@ def build_keyboard(item: Item) -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton("💾 Gravar", callback_data="save_item"),
             InlineKeyboardButton(
-                "💾 Gravar (em novo local)", callback_data="save_item_new_location"
+                "💾 Gravar (novo contexto)", callback_data="save_item_new_context"
             ),
         ],
         [InlineKeyboardButton("❌ Descartar", callback_data="discard_item")],
@@ -343,13 +345,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         _, success = await save(item, query)
         if success:
             context.user_data["last_location"] = item.location
+            context.user_data["last_tags"] = item.tags
             reset_context(context)
         else:
             await show_summary(query, context)
-    elif data == "save_item_new_location":
+    elif data == "save_item_new_context":
         _, success = await save(item, query)
         if success:
             context.user_data["last_location"] = None
+            context.user_data["last_tags"] = None
             reset_context(context)
         else:
             await show_summary(query, context)

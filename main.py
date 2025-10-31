@@ -7,11 +7,11 @@ from os import path
 import tempfile
 import re
 import os
-
 import logging
 from dataclasses import dataclass
 from typing import Optional
 from enum import Enum
+
 from icecream import ic
 
 from slugify import slugify
@@ -88,9 +88,12 @@ def build_keyboard(item: Item) -> InlineKeyboardMarkup:
                 "📝 Editar descrição", callback_data="edit_description"
             ),
         ],
-        [InlineKeyboardButton("🔢 Editar quantidade", callback_data="edit_quantidade")],
-        [InlineKeyboardButton("📏 Editar tamanho", callback_data="edit_size")],
-        # edit tags
+        [
+            InlineKeyboardButton(
+                "🔢 Editar quantidade", callback_data="edit_quantidade"
+            ),
+            InlineKeyboardButton("📏 Editar tamanho", callback_data="edit_size"),
+        ],
         [
             InlineKeyboardButton("🏷 Editar tags", callback_data="edit_tags"),
             InlineKeyboardButton("❌ Remover", callback_data="remove_tags"),
@@ -341,11 +344,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if success:
             context.user_data["last_location"] = item.location
             reset_context(context)
+        else:
+            await show_summary(query, context)
     elif data == "save_item_new_location":
         _, success = await save(item, query)
         if success:
             context.user_data["last_location"] = None
             reset_context(context)
+        else:
+            await show_summary(query, context)
     elif data == "discard_item":
         reset_context(context)
         await safe_edit_message(query, "❌ Item descartado.")

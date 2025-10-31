@@ -54,13 +54,13 @@ class Item:
 
     def validate(self):
         if self.name is None:
-            raise ValueError("Name is required")
+            raise ValueError("Nome é obrigatório")
 
         if self.quantity is None:
-            raise ValueError("Quantity is required")
+            raise ValueError("Quantidade é obrigatória")
 
         if self.location is None:
-            raise ValueError("Location is required")
+            raise ValueError("Localização é obrigatória")
 
     def to_dict(self):
         return {

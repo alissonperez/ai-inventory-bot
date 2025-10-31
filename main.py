@@ -94,18 +94,20 @@ def build_keyboard(item: Item) -> InlineKeyboardMarkup:
             InlineKeyboardButton(
                 "🔢 Editar quantidade", callback_data="edit_quantidade"
             ),
-            InlineKeyboardButton("📏 Editar tamanho", callback_data="edit_size"),
-        ],
-        [
-            InlineKeyboardButton("🏷 Editar tags", callback_data="edit_tags"),
-            InlineKeyboardButton("❌ Remover", callback_data="remove_tags"),
         ],
         [InlineKeyboardButton("🖼 Editar foto", callback_data="edit_foto")],
         [
             InlineKeyboardButton(
                 "📦 Editar localização", callback_data="edit_location"
             ),
-            InlineKeyboardButton("❌ Remover", callback_data="remove_location"),
+        ],
+        [
+            InlineKeyboardButton("📏 Editar tamanho", callback_data="edit_size"),
+            InlineKeyboardButton("❌ Remover", callback_data="remove_size"),
+        ],
+        [
+            InlineKeyboardButton("🏷 Editar tags", callback_data="edit_tags"),
+            InlineKeyboardButton("❌ Remover", callback_data="remove_tags"),
         ],
         [
             InlineKeyboardButton("💾 Gravar", callback_data="save_item"),
@@ -333,9 +335,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_edit_message(query, "Envie as tags (separadas por ','):")
     elif data == "extract_vision_data":
         await extract_vision_data(query, context)
-    elif data == "remove_location":
-        item.location = None
-        await safe_edit_message(query, "Local removido.")
+    elif data == "remove_size":
+        item.size = None
+        await safe_edit_message(query, "Tamanho removido.")
         await show_summary(query, context)
     elif data == "remove_tags":
         item.tags = []

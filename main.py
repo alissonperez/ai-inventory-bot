@@ -53,6 +53,24 @@ re_multiple_spaces = re.compile(r"\s+")
 output = MarkdownOutput(OUTPUT_DIR)
 vision_service = VisionService()
 
+# ========================
+# Decorators
+# ========================
+
+
+# decorator @filter_users
+def filter_users(func):
+    async def wrapper(update: Update, *args, **kwargs):
+        if ALLOWED_USER_IDS and update.effective_user.id not in ALLOWED_USER_IDS:
+            await update.message.reply_text(
+                "Você não tem permissão para usar este bot."
+            )
+            return
+
+        return await func(update, *args, **kwargs)
+
+    return wrapper
+
 
 # =========================
 # Helpers
@@ -160,11 +178,15 @@ async def safe_edit_message(query, text: str):
 # =========================
 # Handlers principais
 # =========================
+
+
+@filter_users
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reset_context(context)
     await update.message.reply_text("Envie o nome ou a foto do item para começar.")
 
 
+@filter_users
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     item = ensure_item(context)
     text = (update.message.text or "").strip()
@@ -237,6 +259,7 @@ def convert_list_to_pairs(command_string):
     return pairs
 
 
+@filter_users
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     item = ensure_item(context)
     photo_caption = update.message.caption
@@ -312,6 +335,9 @@ async def show_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # =========================
 # Botões
 # =========================
+
+
+@filter_users
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -425,17 +451,10 @@ def main():
 
     app = ApplicationBuilder().token(TOKEN).build()
 
-    # Create a user filter
-    user_filter = (
-        filters.User(user_id=ALLOWED_USER_IDS) if ALLOWED_USER_IDS else filters.ALL
-    )
-
     app.add_handler(CommandHandler("myid", debug_user_id))
-    app.add_handler(CommandHandler("start", start, filters=user_filter))
-    app.add_handler(
-        MessageHandler((filters.TEXT & ~filters.COMMAND) and user_filter, handle_text)
-    )
-    app.add_handler(MessageHandler((filters.PHOTO and user_filter), handle_photo))
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
     logger.info("Bot iniciado.")

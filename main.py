@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
 
 TOKEN = settings.telegram_token
 OUTPUT_DIR = settings.output_dir
+ALLOWED_USER_IDS = settings.allowed_user_ids
 
 re_multiple_spaces = re.compile(r"\s+")
 
@@ -411,6 +412,10 @@ async def save(item: Item, query) -> list[Item | bool]:
         return item, False
 
 
+async def debug_user_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Your user ID: {update.effective_user.id}")
+
+
 # =========================
 # Inicialização
 # =========================
@@ -420,9 +425,17 @@ def main():
 
     app = ApplicationBuilder().token(TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    # Create a user filter
+    user_filter = (
+        filters.User(user_id=ALLOWED_USER_IDS) if ALLOWED_USER_IDS else filters.ALL
+    )
+
+    app.add_handler(CommandHandler("myid", debug_user_id))
+    app.add_handler(CommandHandler("start", start, filters=user_filter))
+    app.add_handler(
+        MessageHandler((filters.TEXT & ~filters.COMMAND) and user_filter, handle_text)
+    )
+    app.add_handler(MessageHandler((filters.PHOTO and user_filter), handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
     logger.info("Bot iniciado.")

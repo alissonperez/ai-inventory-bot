@@ -1,11 +1,11 @@
 import os
 from datetime import datetime
-from yaml import load, dump
+from yaml import dump
 
 try:
-    from yaml import CLoader as Loader, CDumper as Dumper
+    from yaml import CDumper as Dumper
 except ImportError:
-    from yaml import Loader, Dumper
+    from yaml import Dumper
 
 from inventorybot.entities import Item, Location
 
@@ -14,9 +14,9 @@ def _dump_properties(properties):
     content = []
     properties_yaml = dump(properties, Dumper=Dumper)
 
-    content.append(f"---")
+    content.append("---")
     content.append(properties_yaml)
-    content.append(f"---")
+    content.append("---")
 
     return content
 

@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from inventorybot.entities import Item
 from openai import OpenAI
 from icecream import ic
 

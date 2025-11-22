@@ -1,18 +1,14 @@
+# ruff: noqa: E402
 from __future__ import annotations
 from dotenv import load_dotenv
 
 load_dotenv()  # take environment variables
 
-from os import path
-import tempfile
+import tempfile  # noqa: E402
 import re
 import os
 import logging
-from dataclasses import dataclass
-from typing import Optional
-from enum import Enum
 
-from icecream import ic
 
 from slugify import slugify
 from telegram import (
@@ -30,7 +26,7 @@ from telegram.ext import (
 )
 
 from inventorybot.settings import settings
-from inventorybot.entities import Item, Status, Location
+from inventorybot.entities import Item, Location
 from inventorybot.infra.markdown_output import MarkdownOutput
 from inventorybot.vision import VisionService
 from inventorybot.parser import parser

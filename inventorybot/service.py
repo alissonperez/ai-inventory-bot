@@ -1,5 +1,4 @@
 from .entities import Item
-from inventorybot.utils import is_numeric
 
 
 class ItemCreator:

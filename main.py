@@ -15,6 +15,7 @@ from telegram import (
     Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    error
 )
 from telegram.ext import (
     ApplicationBuilder,
@@ -28,6 +29,13 @@ from telegram.ext import (
 from inventorybot.settings import settings
 from inventorybot.entities import Item, Location
 from inventorybot.infra.markdown_output import MarkdownOutput
+from inventorybot.telegram_text import (
+    CAPTION_LIMIT,
+    TEXT_LIMIT,
+    build_summary_for_caption,
+    fit_text_to_limit,
+    render_summary,
+)
 from inventorybot.vision import VisionService
 from inventorybot.parser import parser
 
@@ -59,11 +67,17 @@ def filter_users(func):
     async def wrapper(update: Update, *args, **kwargs):
         if ALLOWED_USER_IDS and update.effective_user.id not in ALLOWED_USER_IDS:
             await update.message.reply_text(
-                "Você não tem permissão para usar este bot."
+                fit_text_to_limit(
+                    "Você não tem permissão para usar este bot.", TEXT_LIMIT
+                )
             )
             return
 
-        return await func(update, *args, **kwargs)
+        try:
+            return await func(update, *args, **kwargs)
+        except error.TimedOut:
+            logger.warning("Request timed out. Retrying...")
+            return await func(update, *args, **kwargs)
 
     return wrapper
 
@@ -95,6 +109,12 @@ def handle_tags(text: str) -> list[str]:
     tags_striped = [v.strip() for v in tags_text.split(",")]
     tags_with_no_space = [slugify(v) for v in tags_striped]
     return tags_with_no_space
+
+
+def get_text_reducer():
+    if vision_service:
+        return vision_service.compact_text
+    return None
 
 
 def build_keyboard(item: Item) -> InlineKeyboardMarkup:
@@ -145,28 +165,15 @@ def build_keyboard(item: Item) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-def render_summary(item: Item) -> str:
-    status_txt = item.status.value if item.status else "-"
-    description_txt = item.description or ""
-    return (
-        "📦 **Item atual:**\n\n"
-        f"🧾 Nome: {item.name}\n"
-        f"📝 Descrição: {description_txt}\n"
-        f"📊 Quantidade: {item.quantity}\n"
-        f"📏 Tamanho: {item.size}\n"
-        f"📦 Localização: {item.location}\n"
-        f"🏷️ Tags: {', '.join(item.tags) if item.tags else '*Nenhuma*'}\n"
-        f"🔖 Status: {status_txt}"
-    )
-
-
 async def safe_edit_message(query, text: str):
     """Edita texto ou legenda conforme o tipo da mensagem que originou o callback."""
     try:
         if query.message.photo:
-            await query.edit_message_caption(caption=text)
+            safe_text = fit_text_to_limit(text, CAPTION_LIMIT)
+            await query.edit_message_caption(caption=safe_text)
         else:
-            await query.edit_message_text(text)
+            safe_text = fit_text_to_limit(text, TEXT_LIMIT)
+            await query.edit_message_text(safe_text)
     except Exception as e:
         logger.exception("Erro ao editar mensagem: %s", e)
 
@@ -179,7 +186,11 @@ async def safe_edit_message(query, text: str):
 @filter_users
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reset_context(context)
-    await update.message.reply_text("Envie o nome ou a foto do item para começar.")
+    await update.message.reply_text(
+        fit_text_to_limit(
+            "Envie o nome ou a foto do item para começar.", TEXT_LIMIT
+        )
+    )
 
 
 @filter_users
@@ -194,7 +205,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             item = handle_name(text, item)
         except ValueError:
-            await update.message.reply_text("Nome inválido. Envie um nome válido.")
+            await update.message.reply_text(
+                fit_text_to_limit("Nome inválido. Envie um nome válido.", TEXT_LIMIT)
+            )
             return
 
         await show_summary(update, context)
@@ -206,7 +219,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             item.quantity = int(text)
         except ValueError:
             await update.message.reply_text(
-                "Quantidade inválida. Envie um número inteiro."
+                fit_text_to_limit(
+                    "Quantidade inválida. Envie um número inteiro.", TEXT_LIMIT
+                )
             )
             return
         await show_summary(update, context)
@@ -263,7 +278,9 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             item = handle_name(photo_caption, item)
         except ValueError as e:
-            await update.message.reply_text(f"Erro ao processar legenda: {e}")
+            await update.message.reply_text(
+                fit_text_to_limit(f"Erro ao processar legenda: {e}", TEXT_LIMIT)
+            )
             return
 
     photo = update.message.photo[-1]
@@ -309,20 +326,29 @@ def handle_name(name: str, item: Item) -> Item:
 
 async def show_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     item = ensure_item(context)
-    caption = render_summary(item)
     reply_markup = build_keyboard(item)
+    text_reducer = get_text_reducer()
 
     # Se tem foto, envia como foto com legenda; senão, como texto
     if item.photo:
+        caption, full_summary, was_shortened = build_summary_for_caption(
+            item, CAPTION_LIMIT, text_reducer
+        )
         await update.message.reply_photo(
             item.photo,
             caption=caption,
             parse_mode="Markdown",
             reply_markup=reply_markup,
         )
+        if was_shortened:
+            await update.message.reply_text(
+                fit_text_to_limit(full_summary, TEXT_LIMIT, text_reducer),
+                parse_mode="Markdown",
+            )
     else:
+        caption = render_summary(item)
         await update.message.reply_text(
-            caption,
+            fit_text_to_limit(caption, TEXT_LIMIT, text_reducer),
             parse_mode="Markdown",
             reply_markup=reply_markup,
         )
@@ -407,11 +433,19 @@ async def extract_vision_data(query, context: ContextTypes.DEFAULT_TYPE):
         item.name = vision_result.name
         item.description = vision_result.description
 
-        caption = render_summary(item)
+        text_reducer = get_text_reducer()
+        caption, full_summary, was_shortened = build_summary_for_caption(
+            item, CAPTION_LIMIT, text_reducer
+        )
         reply_markup = build_keyboard(item)
         await query.edit_message_caption(
             caption=caption, reply_markup=reply_markup, parse_mode="Markdown"
         )
+        if was_shortened:
+            await query.message.reply_text(
+                fit_text_to_limit(full_summary, TEXT_LIMIT, text_reducer),
+                parse_mode="Markdown",
+            )
 
     except Exception as e:
         logger.exception("Erro ao extrair dados da imagem: %s", e)
@@ -435,7 +469,11 @@ async def save(item: Item, query) -> list[Item | bool]:
 
 
 async def debug_user_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"Your user ID: {update.effective_user.id}")
+    await update.message.reply_text(
+        fit_text_to_limit(
+            f"Your user ID: {update.effective_user.id}", TEXT_LIMIT
+        )
+    )
 
 
 # =========================

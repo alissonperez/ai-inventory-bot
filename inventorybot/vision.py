@@ -112,6 +112,48 @@ class VisionService:
         # 3) última tentativa: json.loads de tudo
         return json.loads(text)
 
+    def compact_text(self, text: str, max_chars: int) -> str:
+        """
+        Reduz um texto para no máximo `max_chars` caracteres usando a Responses API.
+        Retorna somente texto em PT-BR, sem markdown ou aspas.
+        """
+        if not text:
+            return ""
+        if max_chars <= 0:
+            return ""
+        if len(text) <= max_chars:
+            return text
+
+        prompt = (
+            "Reduza o texto abaixo para no máximo "
+            f"{max_chars} caracteres, mantendo o significado e em português do Brasil. "
+            "Retorne apenas o texto final, sem aspas e sem markdown.\n\n"
+            f"TEXTO:\n{text}"
+        )
+
+        response = self.client.responses.create(
+            model=self.model,
+            input=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": prompt},
+                    ],
+                }
+            ],
+            # Limite conservador de saída para evitar respostas longas
+            max_output_tokens=min(256, max(64, max_chars)),
+        )
+
+        message_text: str = getattr(response, "output_text", "") or ""
+        compacted = message_text.strip()
+        if compacted.startswith('"') and compacted.endswith('"') and len(compacted) > 1:
+            compacted = compacted[1:-1].strip()
+
+        if len(compacted) > max_chars:
+            compacted = compacted[:max_chars].rstrip()
+        return compacted
+
     def extract_item_details_from_image(self, item: Item) -> VisionResult:
         data_url = self._encode_image_to_data_url(item.photo)
 

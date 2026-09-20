@@ -1,4 +1,5 @@
 import os
+import shutil
 from datetime import datetime
 from yaml import dump
 
@@ -92,7 +93,8 @@ class MarkdownOutput:
         print("Moving", item.photo, "to", cover_filepath)
 
         # move photo filename to attachments folder
-        os.rename(item.photo, cover_filepath)
+        # (shutil.move handles cross-device moves, e.g. /tmp -> Dropbox)
+        shutil.move(item.photo, cover_filepath)
 
         return cover_filepath
 
